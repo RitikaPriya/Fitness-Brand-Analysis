@@ -62,11 +62,13 @@ library(lubridate)
 library(shiny)
 
 ### Importing dataset
+### Change the location as per the location where the data is saved in your drive.
 
 setwd("C:\\Users\\USer\\OneDrive\\Desktop\\Programming\\Google Analytics\\Task_2\\Fitabase Data\\")
 Daily_Activity<-read.csv("dailyActivity_merged.csv")
 Weight_log<-read.csv("weightLogInfo_merged.csv")
 Sleep_Day<-read.csv("sleepDay_merged.csv")
+
 ```
 
 
