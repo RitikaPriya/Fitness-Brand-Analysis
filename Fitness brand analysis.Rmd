@@ -1,0 +1,532 @@
+---
+title: "Fitness company analysis"
+author: "Ritika Priya"
+date: "2023-08-24"
+output: 
+  html_document:
+    code_folding: hide
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning=FALSE,
+  message=FALSE)
+```
+
+# Bellabeat Data Analysis
+
+Bellabeat is a manufacturer of health-focused products for women. We need to draw insights from the data of its smart device. 
+
+There are 6 phases in the data analytics process:-
+
+1. Ask- The relevant questions in this analysis are
+
+What are the trends we notice in the data?
+
+2. Prepare-
+
+The data is available on Kaggle. There are 12 datasets and we have the daily data, hourly data. and the minute data. The data will help us learn more about the use of smart devices and then corresponding marketing strategy could be tailored. 
+
+3. Process-
+
+The software package, R is used as it is more efficient in completing all the tasks required to analyse the data. Data cleaning is a part of this step too. 
+
+4. Analyze-
+In this step, the analysis is done and useful insights are derived. 
+
+5. Share-
+To share the insights with the conceened parties and to communicate the results easily, data visulasation is used. 
+6. Act-
+Based on the insights, the relevant steps are taken. 
+
+
+
+
+```{r, warning=FALSE}
+### Importing the libraries
+library(tidyverse)
+library(skimr)
+library(dplyr)
+library(ggpubr)
+library(readr)
+library(magrittr)
+library(dplyr) 
+library(ggplot2)
+library(ggpubr)
+library(knitr)
+library(kableExtra)
+library(reactable)
+library(lubridate)
+library(shiny)
+
+### Importing dataset
+
+setwd("C:\\Users\\USer\\OneDrive\\Desktop\\Programming\\Google Analytics\\Task_2\\Fitabase Data\\")
+Daily_Activity<-read.csv("dailyActivity_merged.csv")
+Weight_log<-read.csv("weightLogInfo_merged.csv")
+Sleep_Day<-read.csv("sleepDay_merged.csv")
+```
+
+
+## Inspecting and cleaning data
+
+
+
+#### Overview of the daily dataset
+#### Displaying the number of duplicates in the dataset.
+
+
+```{r}
+UniqueDailyActivity<-Daily_Activity[!duplicated(Daily_Activity["Id"]),]  
+count(UniqueDailyActivity) 
+```
+
+#### A brief glance at the dataset.
+
+
+
+```{r}
+
+ui <- fluidPage(
+  selectInput("num_rows", label = "Select Number of Rows:", 
+              choices = c(5, 10, 15, 20), selected = 10),
+  tableOutput("output_table")
+)
+
+server <- function(input, output) {
+  output$output_table <- renderTable({
+    head(Daily_Activity, as.numeric(input$num_rows))
+  })
+}
+
+shinyApp(ui, server)
+```
+
+
+#### Checking the type of variable for ActivtyDate
+
+```{r}
+cat(typeof(Daily_Activity$ActivityDate))
+```
+
+We need to convert the character into date. 
+
+#### Looking at the Date in Daily data closely.
+
+```{r, warning=FALSE}
+data <- head(Daily_Activity["ActivityDate"],50)
+
+reactable(
+  data,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+```
+
+#### Converting the ActivityDate from character to date format. 
+ 
+```{r, warning=FALSE}
+### Separating date into day, month, and year.
+Daily_Activity_final=Daily_Activity %>% 
+  separate(ActivityDate, into = c("month","day", "year"), sep = "[/]")
+
+### Combining day month and time.
+Daily_Activity_final$combined_date <- as.Date(paste(Daily_Activity_final$year, Daily_Activity_final$month, Daily_Activity_final$day, sep = "-"), format = "%Y-%m-%d")
+
+### Looking at the new combined time.
+data1 <- head(Daily_Activity_final["combined_date"],50)
+
+reactable(
+  data1,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+```
+
+#### Checking the format of new date. 
+```{r}
+cat(typeof(Daily_Activity_final$combined_date))
+```
+
+#### Sleep dataset.
+```{r}
+### Diplaying the number of duplicates in the dataset
+UniqueSleepDay<-Sleep_Day[!duplicated(Sleep_Day["Id"]),]  
+count(UniqueSleepDay) 
+```
+
+```{r}
+ui1 <- fluidPage(
+  selectInput("num_rows", label = "Select Number of Rows:", 
+              choices = c(5, 10, 15, 20), selected = 10),
+  tableOutput("output_table")
+)
+
+server1 <- function(input, output) {
+  output$output_table <- renderTable({
+    head(Sleep_Day, as.numeric(input$num_rows))
+  })
+}
+
+shinyApp(ui1, server1)
+```
+
+#### Checking the type of variable SleepDay.
+
+```{r}
+cat(typeof(Sleep_Day$SleepDay))
+```
+
+#### We need to convert the character into date.
+
+#### Looking at the Date in Daily data closely.
+```{r, warning=FALSE}
+data2 <- head(Sleep_Day["SleepDay"],50)
+
+reactable(
+  data2,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+```
+
+#### Converting the Sleep Day from character to Date format.
+```{r, warning=FALSE}
+### Separating the date and time in two different columns.
+Sleep_Day1<- Sleep_Day %>%
+  separate(SleepDay, into = c("date", "time"), sep = " ")
+#selected_columns <- Sleep_Day[, c("date", "time")]
+
+data3 <- head(Sleep_Day1[,c("date","time")],50)
+
+reactable(
+  data3,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+```
+
+```{r}
+### Separating the date into day, month, and year.
+Sleep_Day_final=Sleep_Day1 %>% 
+  separate(date, into = c("month","day", "year"), sep = "[/]")
+### Combining the three to get the date.
+Sleep_Day_final$combined_date <- as.Date(paste(Sleep_Day_final$year, Sleep_Day_final$month, Sleep_Day_final$day, sep = "-"), format = "%Y-%m-%d")
+Sleep_Day_final$consistent_time<- format(as.POSIXct(Sleep_Day_final$time,
+                                              format = '%H:%M:%S'), format = '%H:%M:%S')
+
+
+### Looking at the new combined time.
+data4 <- head(Sleep_Day_final[,c("combined_date", "consistent_time")],50)
+
+reactable(
+  data4,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+```
+
+#### Checking the format of new date. 
+```{r}
+cat(typeof(Sleep_Day_final$combined_date))
+```
+
+#### Weight data
+
+```{r}
+### Diplaying the number of duplicates in the dataset
+UniqueDate<-Weight_log[!duplicated(Weight_log["Id"]),]  
+count(UniqueDate) 
+```
+
+```{r}
+
+ui2 <- fluidPage(
+  selectInput("num_rows", label = "Select Number of Rows:", 
+              choices = c(5, 10, 15, 20), selected = 10),
+  tableOutput("output_table")
+)
+
+server2 <- function(input, output) {
+  output$output_table <- renderTable({
+    head(Weight_log, as.numeric(input$num_rows))
+  })
+}
+
+shinyApp(ui2, server2)
+```
+
+#### Checking the type of variable SleepDay
+```{r}
+cat(typeof(Weight_log$Date))
+```
+
+#### We need to convert the character into date. 
+#### Looking at the Date in Daily data closely.
+
+```{r, warning=FALSE}
+data5 <- head(Weight_log["Date"],50)
+
+reactable(
+  data5,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+```
+
+#### Converting the Date to the date format.
+```{r, warning=FALSE}
+Weight_log<- Weight_log %>%
+  separate(Date, into = c("date", "time"), sep = " ")
+
+Weight_log=Weight_log %>% 
+  separate(date, into = c("month","day", "year"), sep = "[/]")
+
+Weight_log$combined_date <- as.Date(paste(Weight_log$year, Weight_log$month, Weight_log$day, sep = "-"), format = "%Y-%m-%d")
+Weight_log$consistent_time<- format(as.POSIXct(Weight_log$time,
+                                                   format = '%H:%M:%S'), format = '%H:%M:%S')
+```
+#### The transformed date and time
+```{r}
+data6 <- head(Weight_log[,c("combined_date","consistent_time")],50)
+
+reactable(
+  data6,
+  defaultPageSize = 10,
+  pagination = TRUE
+)
+
+```
+
+
+#### Checking the sum of missing values in the three datasets.
+
+#### Daily_Activity
+
+```{r, warning=FALSE}
+sum(is.na(Daily_Activity))
+```
+
+#### Sleep_Day
+
+```{r}
+sum(is.na(Sleep_Day))
+```
+
+#### Weight_log
+```{r}
+sum(is.na(Weight_log))
+```
+
+#### Checking the sum of distict values in the three datasets.
+
+#### Daily_dataset
+
+```{r, warning=FALSE}
+n_distinct(Daily_Activity$Id) 
+```
+
+#### Sleep_Day
+```{r}
+n_distinct(Sleep_Day$Id) 
+```
+
+#### Weight_log
+```{r}
+n_distinct(Weight_log$Id)
+```
+
+
+## Analyze
+
+#### The summary of daily_dataset
+```{r, warning=FALSE}
+
+Daily_Activity%>%
+  select(
+    TotalSteps,
+    TotalDistance,
+    VeryActiveDistance,
+    ModeratelyActiveDistance,
+    LightActiveDistance, 
+    SedentaryActiveDistance,
+    SedentaryMinutes,
+    Calories
+  ) %>%
+  summary()%>%
+  kable()%>%
+  kable_styling(bootstrap_options = "striped")
+  
+
+```
+#### The summary of Sleep_day dataset
+```{r}
+Sleep_Day %>%
+  select(
+    TotalSleepRecords,
+    TotalMinutesAsleep,
+    TotalTimeInBed
+  
+  ) %>%
+  summary()%>%
+  kable()%>%
+  kable_styling(bootstrap_options = "striped")
+  
+```
+#### The summary of Weight_log
+
+```{r}
+
+Weight_log%>%
+  select(
+    WeightKg,
+    WeightPounds,
+    Fat,
+    BMI
+    
+  ) %>%
+  summary()%>%
+  kable()%>%
+  kable_styling(bootstrap_options = "striped")
+```
+The mean number of total steps taken is 7368 and the maximum total distance covered is 28 km. The mean colories burnt is 2304. If we look at the dataset documenting sleep, it shows the time spent in bed averages 458 minutes while the time peole are actually asleep is 419 minutes. 
+
+
+## Share
+
+#### Total distance Vs Burnt calories
+```{r}
+
+ggplot(data = Daily_Activity, aes(x=Daily_Activity$TotalDistance, y=Daily_Activity$Calories))+
+  geom_point(stat="identity",color="Orange")+
+  labs(title="Relationship between Total Distance and Burnt Calories",x="Total Distance", y="Burned Calories")+
+  geom_smooth(mapping=aes(x=TotalDistance,y=Calories))
+
+```
+
+We see that as the total distance increases, the calories burnt also increases which is justifies the relationship between the two. 
+
+
+
+#### Light Activity Distance
+
+```{r}
+#color="purple"))
+ggplot(data = Daily_Activity, aes(x=LightActiveDistance, y=Calories))+
+  geom_point(stat="identity",color="purple")+
+  labs(title="Relationship between light activity and calories burned", x="Light Activity", y= "Burned Calories")+
+  geom_smooth(mapping=aes(x=LightActiveDistance,y=Calories))
+```
+
+We see that this also shows the postive relatinship but it is not very pronounced. 
+
+
+
+#### Sedentary Active Distance
+```{r, warning=FALSE}
+ggplot(data = Daily_Activity, aes(x=SedentaryActiveDistance, y=Calories))+
+  geom_point(stat="identity",color="blue")+
+  labs(title="Relationship between sedentry activity and calories burned", x="Sedentry Activity", y= "Burned Calories")+
+  geom_smooth(mapping=aes(x=SedentaryActiveDistance, y=Calories))
+```
+
+
+This relationship is a bit scattered but it does prove the point that as sedentary minutes rises, calories burnt becomes lesser. 
+
+
+
+#### Moderately Active Distance
+
+
+```{r}
+ggplot(data = Daily_Activity, aes(x=ModeratelyActiveDistance, y=Calories))+
+  geom_point(stat="identity",color="black")+
+  labs(title="Relationship between moderate activity and calories burned", x="Moderate Activity", y= "Burned Calories")+
+  geom_smooth(mapping=aes(x=ModeratelyActiveDistance, y=Calories))
+```
+
+
+
+This is alomost a horizontal lineb but it does show a negative relationship at the far end which needs a bit more explanation.
+
+
+
+#### Very Active Distance
+
+
+```{r}
+ggplot(data = Daily_Activity, aes(x=VeryActiveDistance, y=Calories))+
+  geom_point(stat="identity",color="purple")+
+  labs(title="Relationship between very active activity and calories burned", x="Very Active Activity", y= "Burned Calories")+
+  geom_smooth(mapping=aes(x=VeryActiveDistance, y=Calories))
+```
+
+
+In this case, the postive relationship between the two looks very much pronomounced which justifies the fact that very active exercize helps in burning more calories.
+
+
+
+
+#### Lightly Active Minutes Vs Burned Calories 
+
+
+
+```{r}
+ggplot(data = Daily_Activity, aes(x=LightlyActiveMinutes, y=Calories))+
+  geom_point(stat="identity",color="blue")+
+  labs(title="Relationship between Lightly Active Minutes and Burnt Calories",x="Lightly Active Minutes", y="Burned Calories")+
+  geom_smooth(mapping=aes(x=LightlyActiveMinutes,y=Calories))
+```
+
+
+Here we see that the light active minutes, i.e the time spent on light activity does not show a considerable relationship with calories burnt. 
+
+
+
+#### Sedentary Minutes Vs Burned Calories
+
+
+
+```{r}
+ggplot(data = Daily_Activity, aes(x=SedentaryMinutes,y=Calories))+
+  geom_point(stat="identity",color="black")+
+  labs(title="Relationship between Sedentary Minutes and Burnt Calories",x="Sedentary Active Minutes", y="Burned Calories")+
+  geom_smooth(mapping=aes(x=SedentaryMinutes,y=Calories))
+```
+
+
+In case of sedentary active minutes, the relationship with burnt calories is increasing at first but becomes negative afterwards. This needs to be probed furthur.
+
+
+
+#### Fairly Active Minutes Vs Burned Calories 
+
+```{r}
+ggplot(data = Daily_Activity, aes(x=FairlyActiveMinutes, y=Calories))+
+  geom_point(stat="identity",color="purple")+
+  labs(title="Relationship between Fairly Active Minutes and Burnt Calories",x="Fairly Active Minutes", y="Burned Calories")+
+  geom_smooth(mapping=aes(x=FairlyActiveMinutes,y=Calories))
+```
+
+
+
+The curve is flat initially but becomes negative afterwords. This requires a bit of more research. 
+
+
+
+#### Very Active Minutes Vs Burned Calories 
+
+```{r}
+ggplot(data = Daily_Activity, aes(x=FairlyActiveMinutes, y=Calories))+
+  geom_point(stat="identity",color="blue")+
+  labs(title="Relationship between Very Active Minutes and Burnt Calories",x="Very Active Minutes", y="Burned Calories")+
+  geom_smooth(mapping=aes(x=VeryActiveMinutes,y=Calories))
+```
+
+
+
+This shows a steep positive curve as expected. 
+ 
+
